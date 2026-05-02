@@ -247,17 +247,17 @@ function openModal(idx){
 
   document.getElementById('m-grid').innerHTML=
     field('CRM',r[F.CRM])+
-    field('Cliente',r[F.Cl])+
+    field('Cliente',r[F.Cl],false,false,true)+
     field('Título',r[F.Ti],true)+
     field('Moneda',r[F.Mo])+
-    field('Venta',r[F.Ve])+
+    field('Venta',r[F.Ve],false,false,true)+
     field('Costo',ex[P.Costo])+
     field('Fecha Estimada',fecha)+
     field('Fecha de Ingreso',ex[P.FecIng])+
     field('Comercial',r[F.Co])+
     field('BSA',ex[P.BSA])+
     field('Link Cotizador',ex[P.Link],false,true)+
-    field('Hs Estimadas',ex[P.Hs],true)+
+    field('Hs Estimadas',ex[P.Hs],true,false,true)+
     field('Comments',ex[P.Comments],true);
 
   document.getElementById('moverlay').classList.add('open');
@@ -282,9 +282,16 @@ function initQF(){
   const qr=document.getElementById('qf-ref');
   [...new Set(DATA.map(r=>r[F.Re]).filter(v=>v&&v!=='#N/A'))].sort()
     .forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;qr.appendChild(o);});
-  if([...qr.options].some(o=>o.value==='Pipeline')) qr.value='Pipeline';
 
-  // Default Año y Mes = fecha actual
+  [...new Set(DATA.map(r=>r[F.An]).filter(v=>v&&v!=='#N/A'&&v!=='1899'))].sort((a,b)=>parseInt(a)-parseInt(b))
+    .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-ano').appendChild(Object.assign(o,{value:v,textContent:v}));});
+  [...new Set(DATA.map(r=>r[F.Ms]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b))
+    .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-mes').appendChild(Object.assign(o,{value:v,textContent:MES_N[parseInt(v)]||v}));});
+  [...new Set(DATA.map(r=>r[F.Pb]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b))
+    .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-prob').appendChild(Object.assign(o,{value:v,textContent:v+'%'}));});
+
+  // Defaults DESPUÉS de poblar los selects
+  if([...qr.options].some(o=>o.value==='Pipeline')) qr.value='Pipeline';
   const _now=new Date();
   const _curY=String(_now.getFullYear());
   const _curM=String(_now.getMonth()+1);
@@ -292,12 +299,6 @@ function initQF(){
   const qfMes=document.getElementById('qf-mes');
   if([...qfAno.options].some(o=>o.value===_curY)) qfAno.value=_curY;
   if([...qfMes.options].some(o=>o.value===_curM)) qfMes.value=_curM;
-  [...new Set(DATA.map(r=>r[F.An]).filter(v=>v&&v!=='#N/A'&&v!=='1899'))].sort((a,b)=>parseInt(a)-parseInt(b))
-    .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-ano').appendChild(Object.assign(o,{value:v,textContent:v}));});
-  [...new Set(DATA.map(r=>r[F.Ms]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b))
-    .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-mes').appendChild(Object.assign(o,{value:v,textContent:MES_N[parseInt(v)]||v}));});
-  [...new Set(DATA.map(r=>r[F.Pb]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b))
-    .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-prob').appendChild(Object.assign(o,{value:v,textContent:v+'%'}));});
 }
 function fechaColor(mes,ano){
   if(!mes||!ano||ano==='1899'||mes==='#N/A'||ano==='#N/A')return'color:#666';
@@ -385,7 +386,7 @@ document.getElementById('thead').innerHTML=HCOLS.map((c,i)=>
   i===12
     ? `<th class="no-sort" style="text-align:center;width:72px">${c}</th>`
     : i===4
-    ? `<th class="no-sort">${c}</th>`
+    ? `<th class="no-sort" style="white-space:nowrap">${c}</th>`
     : `<th onclick="setSort(${i})">${c} <span class="arr">↕</span></th>`
 ).join('');
 

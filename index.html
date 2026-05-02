@@ -233,14 +233,14 @@ function openModal(idx){
   document.getElementById('m-crm').textContent='CRM '+( r[F.CRM]||'—');
   document.getElementById('m-title').textContent=r[F.Ti]||'Sin título';
 
-  function field(label,val,full,isLink){
+  function field(label,val,full,isLink,highlight){
     const v=val&&val!=='#N/A'?val:'';
     const display = isLink&&v
       ? `<a href="${esc(v)}" target="_blank" rel="noopener">🔗 Abrir cotizador</a>`
       : (v?esc(v):'<span style="color:var(--hint)">—</span>');
     return `<div class="modal-field${full?' full':''}">`+
       `<div class="modal-field-label">${label}</div>`+
-      `<div class="modal-field-value">${display}</div></div>`;
+      `<div class="modal-field-value" style="${highlight?'color:#DFFF51;font-weight:800;font-size:14px':''}">${display}</div></div>`;
   }
 
   const fecha=r[F.An]&&r[F.An]!=='1899'?(r[F.Ms]+'/'+r[F.An]):'—';

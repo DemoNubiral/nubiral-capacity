@@ -290,6 +290,18 @@ function initQF(){
   [...new Set(DATA.map(r=>r[F.Pb]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b))
     .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-prob').appendChild(Object.assign(o,{value:v,textContent:v+'%'}));});
 }
+function fechaColor(mes,ano){
+  if(!mes||!ano||ano==='1899'||mes==='#N/A'||ano==='#N/A')return'color:#666';
+  const now=new Date();
+  const curY=now.getFullYear(),curM=now.getMonth()+1;
+  const ym=parseInt(ano)*12+parseInt(mes);
+  const cur=curY*12+curM;
+  const diff=ym-cur;
+  if(diff<0) return'color:#f87171;font-weight:700'; // ROJO — pasado
+  if(diff===0) return'color:#fb923c;font-weight:700'; // NARANJA — mes actual
+  if(diff<=2) return'color:#facc15;font-weight:700'; // AMARILLO — +1 o +2 meses
+  return'color:#4ade80;font-weight:700'; // VERDE — más de 2 meses
+}
 function qfSync(){pg=0;af();}
 function qfReset(){['qf-ref','qf-ano','qf-mes','qf-prob'].forEach(id=>document.getElementById(id).value='');pg=0;af();}
 pop('fp',F.Pa);pop('ft',F.Te);pop('ff',F.Fo);pop('fd',F.PD);pop('fe',F.Es);
@@ -350,9 +362,9 @@ function srt(){
   });
 }
 
-const HCOLS=['CRM','Cliente','Título','POD','Tecnología','Foco','País','Moneda','Venta','Prob%','Status','Detalle','Estado','Comercial','Fecha Est.'];
+const HCOLS=['CRM','Cliente','Título','POD','Fecha Est.','Tecnología','Foco','País','Moneda','Venta','Prob%','Status','Detalle','Estado','Comercial'];
 function setSort(i){
-  if(i===11)return; // Detalle col not sortable
+  if(i===4||i===12)return; // Fecha Est and Detalle not sortable
   if(sc===i)sa=!sa;else{sc=i;sa=true;}
   srt();render();
   document.querySelectorAll('th').forEach((th,j)=>{
@@ -361,8 +373,10 @@ function setSort(i){
   });
 }
 document.getElementById('thead').innerHTML=HCOLS.map((c,i)=>
-  i===11
+  i===12
     ? `<th class="no-sort" style="text-align:center;width:72px">${c}</th>`
+    : i===4
+    ? `<th class="no-sort">${c}</th>`
     : `<th onclick="setSort(${i})">${c} <span class="arr">↕</span></th>`
 ).join('');
 
@@ -381,6 +395,7 @@ function render(){
       <td title="${esc(r[F.Cl])}">${r[F.Cl]||'—'}</td>
       <td title="${esc(r[F.Ti])}" style="max-width:180px">${r[F.Ti]||'—'}</td>
       <td>${r[F.PD]||'—'}</td>
+      <td style="${fechaColor(r[F.Ms],r[F.An])}">${r[F.An]&&r[F.An]!='1899'?r[F.Ms]+'/'+r[F.An]:'—'}</td>
       <td>${r[F.Te]||'—'}</td>
       <td>${r[F.Fo]||'—'}</td>
       <td>${r[F.Pa]||'—'}</td>
@@ -391,7 +406,6 @@ function render(){
       <td style="text-align:center"><button class="det-btn" onclick="openModal(${globalIdx})">Ver más</button></td>
       <td>${bdg(r[F.Es])}</td>
       <td title="${esc(r[F.Co])}">${r[F.Co]||'—'}</td>
-      <td>${r[F.An]&&r[F.An]!='1899'?r[F.Ms]+'/'+r[F.An]:'—'}</td>
     </tr>`;
   }).join('');
 }

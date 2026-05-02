@@ -283,6 +283,15 @@ function initQF(){
   [...new Set(DATA.map(r=>r[F.Re]).filter(v=>v&&v!=='#N/A'))].sort()
     .forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;qr.appendChild(o);});
   if([...qr.options].some(o=>o.value==='Pipeline')) qr.value='Pipeline';
+
+  // Default Año y Mes = fecha actual
+  const _now=new Date();
+  const _curY=String(_now.getFullYear());
+  const _curM=String(_now.getMonth()+1);
+  const qfAno=document.getElementById('qf-ano');
+  const qfMes=document.getElementById('qf-mes');
+  if([...qfAno.options].some(o=>o.value===_curY)) qfAno.value=_curY;
+  if([...qfMes.options].some(o=>o.value===_curM)) qfMes.value=_curM;
   [...new Set(DATA.map(r=>r[F.An]).filter(v=>v&&v!=='#N/A'&&v!=='1899'))].sort((a,b)=>parseInt(a)-parseInt(b))
     .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-ano').appendChild(Object.assign(o,{value:v,textContent:v}));});
   [...new Set(DATA.map(r=>r[F.Ms]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b))

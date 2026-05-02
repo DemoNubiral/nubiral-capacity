@@ -161,6 +161,10 @@
     <div class="qf-group"><label>Año</label><select id="qf-ano" onchange="qfSync()"><option value="">Todos</option></select></div>
     <div class="qf-group"><label>Mes</label><select id="qf-mes" onchange="qfSync()"><option value="">Todos</option></select></div>
     <div class="qf-group"><label>Probabilidad %</label><select id="qf-prob" onchange="qfSync()"><option value="">Todas</option></select></div>
+    <div style="display:flex;flex-direction:column;gap:5px;min-width:160px">
+      <label style="font-size:9px;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.08em">Total Venta filtrada</label>
+      <div id="qf-total" style="font-size:20px;font-weight:800;color:#DFFF51;letter-spacing:-.5px;line-height:1">—</div>
+    </div>
     <button class="qf-reset" onclick="qfReset()">✕ Limpiar filtros</button>
   </div>
   <div class="slabel">Distribución del pipeline</div>
@@ -278,6 +282,17 @@ function pop(id,idx){
     .forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});
 }
 const MES_N={1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
+function updateTotal(){
+  const total=filt.reduce((sum,r)=>{
+    const v=String(r[F.Ve]||'').replace(/[$.,\s]/g,'');
+    return sum+(parseFloat(v)||0);
+  },0);
+  const el=document.getElementById('qf-total');
+  if(!el)return;
+  if(total>=1e6) el.textContent='$'+(total/1e6).toFixed(2)+'M';
+  else if(total>=1e3) el.textContent='$'+(total/1e3).toFixed(1)+'K';
+  else el.textContent=total?'$'+total.toLocaleString('es-AR'):'—';
+}
 function initQF(){
   const qr=document.getElementById('qf-ref');
   [...new Set(DATA.map(r=>r[F.Re]).filter(v=>v&&v!=='#N/A'))].sort()
@@ -352,7 +367,7 @@ function af(){
     return true;
   });
   if(sc>=0)srt();
-  render();kpis();bars();
+  render();kpis();bars();updateTotal();
 }
 
 const NUM_COLS=new Set([F.CRM,F.Pb,F.Ms,F.An]);

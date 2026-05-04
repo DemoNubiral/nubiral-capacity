@@ -119,6 +119,19 @@
   .modal-field-value.lime{color:var(--lime);font-weight:700;font-size:14px}
   .modal-hint{font-size:10px;color:var(--hint);text-align:center;padding:10px 0 0;font-style:italic}
   @media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.charts-row{grid-template-columns:1fr}.qf-panel{gap:12px}}
+  .ms-wrap{position:relative;min-width:130px}
+  .ms-btn{width:100%;padding:9px 12px;border:.5px solid rgba(223,255,81,.35);border-radius:8px;font-size:12px;font-family:'Montserrat',sans-serif;font-weight:700;color:#fff;background:#0a0a0a;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:6px;white-space:nowrap;overflow:hidden}
+  .ms-btn:focus{outline:none;border-color:var(--lime);box-shadow:0 0 0 3px rgba(223,255,81,.08)}
+  .ms-btn .ms-arrow{font-size:9px;opacity:.6;flex-shrink:0;transition:transform .2s}
+  .ms-wrap.open .ms-arrow{transform:rotate(180deg)}
+  .ms-dropdown{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:160px;background:#111;border:.5px solid rgba(223,255,81,.3);border-radius:10px;z-index:200;padding:6px;box-shadow:0 12px 40px rgba(0,0,0,.7)}
+  .ms-wrap.open .ms-dropdown{display:block}
+  .ms-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);transition:background .12s}
+  .ms-item:hover{background:rgba(255,255,255,.06);color:#fff}
+  .ms-item input[type=checkbox]{accent-color:var(--lime);width:14px;height:14px;cursor:pointer;flex-shrink:0}
+  .ms-item.checked{color:#fff}
+  .ms-clear{width:100%;margin-top:4px;padding:5px;border:none;border-top:.5px solid rgba(255,255,255,.07);background:transparent;color:var(--hint);font-size:10px;font-family:'Montserrat',sans-serif;font-weight:700;cursor:pointer;text-align:center;padding-top:8px}
+  .ms-clear:hover{color:var(--lime)}
   @media(max-width:700px){.kpi-grid{grid-template-columns:1fr 1fr}.hsub{display:none}.modal-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -159,8 +172,20 @@
     <div class="qf-divider"></div>
     <div class="qf-group"><label>Ref</label><select id="qf-ref" onchange="qfSync()"><option value="">Todas</option></select></div>
     <div class="qf-group"><label>Año</label><select id="qf-ano" onchange="qfSync()"><option value="">Todos</option></select></div>
-    <div class="qf-group"><label>Mes</label><select id="qf-mes" onchange="qfSync()"><option value="">Todos</option></select></div>
-    <div class="qf-group"><label>Probabilidad %</label><select id="qf-prob" onchange="qfSync()"><option value="">Todas</option></select></div>
+    <div class="qf-group ms-wrap" id="ms-mes-wrap">
+      <label>Mes</label>
+      <button class="ms-btn" onclick="toggleMS('ms-mes-wrap',event)" type="button">
+        <span id="ms-mes-label">Todos</span><span class="ms-arrow">▼</span>
+      </button>
+      <div class="ms-dropdown" id="ms-mes-dd"></div>
+    </div>
+    <div class="qf-group ms-wrap" id="ms-prob-wrap">
+      <label>Probabilidad %</label>
+      <button class="ms-btn" onclick="toggleMS('ms-prob-wrap',event)" type="button">
+        <span id="ms-prob-label">Todas</span><span class="ms-arrow">▼</span>
+      </button>
+      <div class="ms-dropdown" id="ms-prob-dd"></div>
+    </div>
     <div style="display:flex;flex-direction:column;gap:5px;min-width:160px">
       <label style="font-size:9px;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.08em">Total Venta filtrada</label>
       <div id="qf-total" style="font-size:20px;font-weight:800;color:#DFFF51;letter-spacing:-.5px;line-height:1">—</div>
@@ -282,6 +307,43 @@ function pop(id,idx){
     .forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});
 }
 const MES_N={1:'Ene',2:'Feb',3:'Mar',4:'Abr',5:'May',6:'Jun',7:'Jul',8:'Ago',9:'Sep',10:'Oct',11:'Nov',12:'Dic'};
+// ── Multi-select helpers ─────────────────────────────────────────────────
+function toggleMS(wrapId,e){
+  e.stopPropagation();
+  const wrap=document.getElementById(wrapId);
+  const isOpen=wrap.classList.contains('open');
+  document.querySelectorAll('.ms-wrap.open').forEach(w=>w.classList.remove('open'));
+  if(!isOpen) wrap.classList.add('open');
+}
+document.addEventListener('click',()=>{
+  document.querySelectorAll('.ms-wrap.open').forEach(w=>w.classList.remove('open'));
+});
+function msGetVals(key){
+  const dd=document.getElementById(`ms-${key}-dd`);
+  return [...dd.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value);
+}
+function msUpdateLabel(key){
+  const vals=msGetVals(key);
+  const lbl=document.getElementById(`ms-${key}-label`);
+  if(!vals.length){lbl.textContent=key==='mes'?'Todos':'Todas';return;}
+  if(key==='mes') lbl.textContent=vals.map(v=>MES_N[parseInt(v)]||v).join(', ');
+  else lbl.textContent=vals.map(v=>v+'%').join(', ');
+}
+function msChange(key){
+  const dd=document.getElementById(`ms-${key}-dd`);
+  dd.querySelectorAll('input[type=checkbox]').forEach(c=>{
+    c.closest('.ms-item').classList.toggle('checked',c.checked);
+  });
+  msUpdateLabel(key);
+  pg=0;af();
+}
+function msClear(key){
+  const dd=document.getElementById(`ms-${key}-dd`);
+  dd.querySelectorAll('input[type=checkbox]').forEach(c=>{c.checked=false;c.closest('.ms-item').classList.remove('checked');});
+  msUpdateLabel(key);
+  pg=0;af();
+}
+// ─────────────────────────────────────────────────────────────────────────
 function updateTotal(){
   const total=filt.reduce((sum,r)=>{
     const v=String(r[F.Ve]||'').replace(/[$.,\s]/g,'');
@@ -300,10 +362,27 @@ function initQF(){
 
   [...new Set(DATA.map(r=>r[F.An]).filter(v=>v&&v!=='#N/A'&&v!=='1899'))].sort((a,b)=>parseInt(a)-parseInt(b))
     .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-ano').appendChild(Object.assign(o,{value:v,textContent:v}));});
-  [...new Set(DATA.map(r=>r[F.Ms]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b))
-    .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-mes').appendChild(Object.assign(o,{value:v,textContent:MES_N[parseInt(v)]||v}));});
-  [...new Set(DATA.map(r=>r[F.Pb]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b))
-    .forEach(v=>{const o=document.createElement('option');document.getElementById('qf-prob').appendChild(Object.assign(o,{value:v,textContent:v+'%'}));});
+  // Mes — checkboxes
+  const mesList=[...new Set(DATA.map(r=>r[F.Ms]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b));
+  const mesDd=document.getElementById('ms-mes-dd');
+  mesList.forEach(v=>{
+    const lbl=document.createElement('label');lbl.className='ms-item';
+    lbl.innerHTML=`<input type="checkbox" value="${v}" onchange="msChange('mes')"> ${MES_N[parseInt(v)]||v}`;
+    mesDd.appendChild(lbl);
+  });
+  const mesClear=document.createElement('button');mesClear.className='ms-clear';mesClear.textContent='✕ Limpiar';mesClear.onclick=()=>msClear('mes');
+  mesDd.appendChild(mesClear);
+
+  // Prob — checkboxes
+  const probList=[...new Set(DATA.map(r=>r[F.Pb]).filter(v=>v&&v!=='#N/A'))].sort((a,b)=>parseInt(a)-parseInt(b));
+  const probDd=document.getElementById('ms-prob-dd');
+  probList.forEach(v=>{
+    const lbl=document.createElement('label');lbl.className='ms-item';
+    lbl.innerHTML=`<input type="checkbox" value="${v}" onchange="msChange('prob')"> ${v}%`;
+    probDd.appendChild(lbl);
+  });
+  const probClear=document.createElement('button');probClear.className='ms-clear';probClear.textContent='✕ Limpiar';probClear.onclick=()=>msClear('prob');
+  probDd.appendChild(probClear);
 
   // Defaults DESPUÉS de poblar los selects
   if([...qr.options].some(o=>o.value==='Pipeline')) qr.value='Pipeline';
@@ -311,9 +390,10 @@ function initQF(){
   const _curY=String(_now.getFullYear());
   const _curM=String(_now.getMonth()+1);
   const qfAno=document.getElementById('qf-ano');
-  const qfMes=document.getElementById('qf-mes');
   if([...qfAno.options].some(o=>o.value===_curY)) qfAno.value=_curY;
-  if([...qfMes.options].some(o=>o.value===_curM)) qfMes.value=_curM;
+  // Default mes actual en checkboxes
+  const mesChk=document.querySelector(`#ms-mes-dd input[value="${_curM}"]`);
+  if(mesChk){mesChk.checked=true;mesChk.closest('.ms-item').classList.add('checked');msUpdateLabel('mes');}
 }
 function fechaColor(mes,ano){
   if(!mes||!ano||ano==='1899'||mes==='#N/A'||ano==='#N/A')return'color:#666';
@@ -328,7 +408,11 @@ function fechaColor(mes,ano){
   return'color:#4ade80;font-weight:700'; // VERDE — más de 2 meses
 }
 function qfSync(){pg=0;af();}
-function qfReset(){['qf-ref','qf-ano','qf-mes','qf-prob'].forEach(id=>document.getElementById(id).value='');pg=0;af();}
+function qfReset(){
+  ['qf-ref','qf-ano'].forEach(id=>document.getElementById(id).value='');
+  msClear('mes');msClear('prob');
+  pg=0;af();
+}
 pop('fp',F.Pa);pop('ft',F.Te);pop('ff',F.Fo);pop('fd',F.PD);pop('fe',F.Es);
 ['fp','ft','ff','fd','fe'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{pg=0;af();}));
 document.getElementById('search-crm').addEventListener('input',()=>{pg=0;af();});
@@ -350,8 +434,8 @@ function af(){
   const ve=document.getElementById('fe').value;
   const vRef=document.getElementById('qf-ref').value;
   const vAno=document.getElementById('qf-ano').value;
-  const vMes=document.getElementById('qf-mes').value;
-  const vProb=document.getElementById('qf-prob').value;
+  const vMes=msGetVals('mes');
+  const vProb=msGetVals('prob');
   filt=DATA.filter(r=>{
     if(vp&&r[F.Pa]!==vp)return false;
     if(vt&&r[F.Te]!==vt)return false;
@@ -362,8 +446,8 @@ function af(){
     if(qCli&&!String(r[F.Cl]||'').toLowerCase().includes(qCli))return false;
     if(vRef&&String(r[F.Re]||'').trim()!==vRef)return false;
     if(vAno&&r[F.An]!==vAno)return false;
-    if(vMes&&r[F.Ms]!==vMes)return false;
-    if(vProb&&r[F.Pb]!==vProb)return false;
+    if(vMes.length&&!vMes.includes(r[F.Ms]))return false;
+    if(vProb.length&&!vProb.includes(r[F.Pb]))return false;
     return true;
   });
   if(sc>=0)srt();
